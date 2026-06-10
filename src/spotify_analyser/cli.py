@@ -12,6 +12,10 @@ def main():
 
     data_loader = DataLoader(args.data_path)
 
+    data_loader.select_data_files()
+
+    data_loader.load_data()
+
 
 if __name__ == "__main__":
     main()
