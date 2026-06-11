@@ -9,11 +9,17 @@ class ListeningEventRepository:
         self.conn = conn
 
     def insert_listening_events(
-        self, events: Iterator[ListeningEvent], batch_size: int = 1000
+        self, events: Iterator[ListeningEvent], limit: int, batch_size: int = 1000
     ) -> None:
         batch: list[ListeningEvent] = []
+        inserted = 0
+
         for event in events:
+            if limit >= 0 and inserted >= limit:
+                break
+
             batch.append(event)
+            inserted += 1
 
             if len(batch) >= batch_size:
                 self.__insert_listening_event_batch(batch)
@@ -23,7 +29,18 @@ class ListeningEventRepository:
             self.__insert_listening_event_batch(batch)
 
     def __insert_listening_event_batch(self, batch: list[ListeningEvent]) -> None:
-        # TODO: insert batch (sql query)
-        print(f"Adding batch of {len(batch)}")
-        print(batch[0])
-        pass
+        self.conn.executemany(
+            """INSERT INTO listening_events VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            [
+                (
+                    event.timestamp,
+                    event.ms_played,
+                    event.media_format,
+                    event.media_type,
+                    event.media_uri,
+                    event.media_title,
+                    event.media_creator,
+                )
+                for event in batch
+            ],
+        )

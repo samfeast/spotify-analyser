@@ -9,6 +9,6 @@ class SpotifyAnalyserApp:
         self.loader = loader
         self.repository = repository
 
-    def ingest(self) -> None:
+    def ingest(self, limit: int = -1) -> None:
         event_iterator = self.loader.load_data()
-        self.repository.insert_listening_events(event_iterator)
+        self.repository.insert_listening_events(event_iterator, limit)

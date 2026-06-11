@@ -1,13 +1,12 @@
 from dataclasses import dataclass
-from enum import Enum
 
 
 @dataclass(frozen=True, slots=True)
 class ListeningEvent:
-    event_type: EventType
+    timestamp: int
     ms_played: int
-
-
-class EventType(Enum):
-    VIDEO = 0
-    AUDIO = 1
+    media_format: str
+    media_type: str
+    media_uri: str
+    media_title: str
+    media_creator: str

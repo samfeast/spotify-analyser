@@ -1,8 +1,9 @@
 from collections.abc import Iterator
+from datetime import datetime
 from pathlib import Path
 import ijson
 
-from spotify_analyser.repository.listening_event import ListeningEvent, EventType
+from spotify_analyser.repository.listening_event import ListeningEvent
 
 
 class DataLoader:
@@ -18,24 +19,46 @@ class DataLoader:
             file_name = path.name.lower()
 
             if "audio" in file_name:
-                yield from self.__parse_audio_events(read_file)
+                yield from self.__parse_events(read_file, "audio")
             elif "video" in file_name:
-                yield from self.__parse_video_events(read_file)
+                yield from self.__parse_events(read_file, "video")
             else:
-                raise NotImplementedError(
-                    "Automatic type detection is not implemented."
+                yield from self.__parse_events(read_file, "unknown")
+
+    def __parse_events(self, file, media_format: str) -> Iterator[ListeningEvent]:
+        for item in ijson.items(file, "item"):
+            if item["ms_played"] == 0:
+                continue
+
+            timestamp = int(
+                datetime.fromisoformat(item["ts"].replace("Z", "+00:00")).timestamp()
+            )
+
+            if (
+                item["spotify_track_uri"] is not None
+                and item["spotify_episode_uri"] is None
+            ):
+                yield ListeningEvent(
+                    timestamp,
+                    item["ms_played"],
+                    media_format,
+                    "track",
+                    item["spotify_track_uri"],
+                    item["master_metadata_track_name"],
+                    item["master_metadata_album_artist_name"],
                 )
-
-    def __parse_audio_events(self, file) -> Iterator[ListeningEvent]:
-        for item in ijson.items(file, "item"):
-            if item["ms_played"] == 0:
-                continue
-
-            yield ListeningEvent(EventType.AUDIO, item["ms_played"])
-
-    def __parse_video_events(self, file) -> Iterator[ListeningEvent]:
-        for item in ijson.items(file, "item"):
-            if item["ms_played"] == 0:
-                continue
-
-            yield ListeningEvent(EventType.VIDEO, item["ms_played"])
+            elif (
+                item["spotify_episode_uri"] is not None
+                and item["spotify_track_uri"] is None
+            ):
+                yield ListeningEvent(
+                    timestamp,
+                    item["ms_played"],
+                    media_format,
+                    "episode",
+                    item["spotify_episode_uri"],
+                    item["episode_name"],
+                    item["episode_show_name"],
+                )
+            else:
+                print("Media ambiguous (expected exactly one URI)")
