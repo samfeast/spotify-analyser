@@ -1,4 +1,6 @@
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DEFAULT_DATA_PATH = PROJECT_ROOT / "data"
+DEFAULT_DATA_DIR = PROJECT_ROOT / "data"
+
+DATABASE_PATH = PROJECT_ROOT / "storage" / "database.db"
