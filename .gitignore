@@ -7,3 +7,6 @@ data/*
 
 storage/*
 !storage/.gitkeep
+
+logs/*
+!logs/.gitkeep

@@ -1,7 +1,10 @@
+import logging
 from pathlib import Path
 import sqlite3
 
 from spotify_analyser.repository.database_schema import SCHEMA
+
+logger = logging.getLogger(__name__)
 
 
 class DatabaseConnection:
@@ -10,7 +13,9 @@ class DatabaseConnection:
 
     def __enter__(self):
         self.conn = sqlite3.connect(self.path)
-        self.__try_initialise_database()
+        logger.debug("Databse connection established")
+        self.__initialise_database()
+        logger.debug("Database initialised with schema")
 
         return self.conn
 
@@ -18,15 +23,19 @@ class DatabaseConnection:
         if exc_type is None:
             self.conn.commit()
         else:
+            logger.error(
+                "Database connection exited with exception, rolling back changes",
+                exc_info=True,
+            )
             self.conn.rollback()
 
         self.conn.close()
 
-    def __try_initialise_database(self) -> None:
+    def __initialise_database(self) -> None:
         try:
             cursor = self.conn.cursor()
             for statement in SCHEMA:
                 cursor.execute(statement)
 
         except sqlite3.OperationalError as e:
-            print(f"Failed to create tables: {e}")
+            logger.exception(f"Failed to initialise database: {e}")
