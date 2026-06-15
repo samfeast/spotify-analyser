@@ -10,3 +10,9 @@ class ListeningEvent:
     media_uri: str
     media_title: str
     media_creator: str
+    reason_start: str
+    reason_end: str
+    shuffle: bool
+    skipped: bool
+    offline: bool
+    conn_country: str

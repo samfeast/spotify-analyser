@@ -1,4 +1,5 @@
 from collections.abc import Iterator
+from dataclasses import astuple
 import logging
 import sqlite3
 
@@ -46,17 +47,22 @@ class ListeningEventRepository:
     def __insert_listening_event_batch(self, batch: list[ListeningEvent]) -> None:
         logger.debug(f"Inserting batch of {len(batch)} listening events")
         self.conn.executemany(
-            """INSERT INTO listening_events VALUES (?, ?, ?, ?, ?, ?, ?)""",
-            [
-                (
-                    event.timestamp,
-                    event.ms_played,
-                    event.media_format,
-                    event.media_type,
-                    event.media_uri,
-                    event.media_title,
-                    event.media_creator,
-                )
-                for event in batch
-            ],
+            """
+            INSERT INTO listening_events (
+                timestamp,
+                ms_played,
+                media_format,
+                media_type,
+                media_uri,
+                media_title,
+                media_creator,
+                reason_start,
+                reason_end,
+                shuffle,
+                skipped,
+                offline,
+                conn_country
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            [astuple(event) for event in batch],
         )

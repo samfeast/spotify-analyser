@@ -2,6 +2,7 @@ from collections.abc import Iterator
 from datetime import datetime
 import logging
 from pathlib import Path
+from typing import TextIO
 import ijson
 
 from spotify_analyser.repository.listening_event import ListeningEvent
@@ -33,42 +34,61 @@ class DataLoader:
                 )
                 yield from self.__parse_events(read_file, "unknown")
 
-    def __parse_events(self, file, media_format: str) -> Iterator[ListeningEvent]:
+    def __parse_events(
+        self, file: TextIO, media_format: str
+    ) -> Iterator[ListeningEvent]:
         for item in ijson.items(file, "item"):
-            if item["ms_played"] == 0:
-                continue
+            try:
+                event = self.__parse_event(item, media_format)
+                if event is None:
+                    continue
+                else:
+                    yield event
+            except KeyError:
+                logger.warning(f"Failed to parse event, missing fields: {item}")
 
-            timestamp = int(
-                datetime.fromisoformat(item["ts"].replace("Z", "+00:00")).timestamp()
+    def __parse_event(
+        self, item: ijson.items, media_format: str
+    ) -> ListeningEvent | None:
+        ms_played = item["ms_played"]
+        if ms_played == 0:
+            return None
+
+        timestamp = int(
+            datetime.fromisoformat(item["ts"].replace("Z", "+00:00")).timestamp()
+        )
+
+        track_uri = item["spotify_track_uri"]
+        episode_uri = item["spotify_episode_uri"]
+
+        if track_uri is not None and episode_uri is None:
+            media_type = "track"
+            media_uri = track_uri
+            media_title = item["master_metadata_track_name"]
+            media_creator = item["master_metadata_album_artist_name"]
+        elif episode_uri is not None and track_uri is None:
+            media_type = "episode"
+            media_uri = episode_uri
+            media_title = item["episode_name"]
+            media_creator = item["episode_show_name"]
+        else:
+            logger.warning(
+                f"Failed to parse event, incorrect number of uri's present: {item}"
             )
+            return None
 
-            if (
-                item["spotify_track_uri"] is not None
-                and item["spotify_episode_uri"] is None
-            ):
-                yield ListeningEvent(
-                    timestamp,
-                    item["ms_played"],
-                    media_format,
-                    "track",
-                    item["spotify_track_uri"],
-                    item["master_metadata_track_name"],
-                    item["master_metadata_album_artist_name"],
-                )
-            elif (
-                item["spotify_episode_uri"] is not None
-                and item["spotify_track_uri"] is None
-            ):
-                yield ListeningEvent(
-                    timestamp,
-                    item["ms_played"],
-                    media_format,
-                    "episode",
-                    item["spotify_episode_uri"],
-                    item["episode_name"],
-                    item["episode_show_name"],
-                )
-            else:
-                logger.warning(
-                    f"Failed to parse event: incorrect number of uri's present\n{item}"
-                )
+        return ListeningEvent(
+            timestamp,
+            ms_played,
+            media_format,
+            media_type,
+            media_uri,
+            media_title,
+            media_creator,
+            item["reason_start"],
+            item["reason_end"],
+            item["shuffle"],
+            item["skipped"],
+            item["offline"],
+            item["conn_country"],
+        )
