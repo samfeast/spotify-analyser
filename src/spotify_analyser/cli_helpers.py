@@ -23,6 +23,10 @@ def parse_args():
         help="Set logging verbosity",
     )
 
+    parser.add_argument(
+        "--console-log", action="store_true", help="Also print log messages to stderr"
+    )
+
     return parser.parse_args()
 
 

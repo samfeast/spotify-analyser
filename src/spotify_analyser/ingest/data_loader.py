@@ -30,7 +30,7 @@ class DataLoader:
                 yield from self.__parse_events(read_file, "video")
             else:
                 logger.warning(
-                    "File name does not contain audio or video, media format is unknown"
+                    f"File name '{file_name}' does not contain audio or video, media format is unknown"
                 )
                 yield from self.__parse_events(read_file, "unknown")
 
@@ -45,7 +45,9 @@ class DataLoader:
                 else:
                     yield event
             except KeyError:
-                logger.warning(f"Failed to parse event, missing fields: {item}")
+                logger.warning(
+                    f"Failed to parse event due to missing fields, data = {item}"
+                )
 
     def __parse_event(
         self, item: ijson.items, media_format: str

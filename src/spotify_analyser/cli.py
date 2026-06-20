@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 def main():
     args = parse_args()
-    configure_logging(args.log_level)
+    configure_logging(args.log_level, args.console_log)
 
     print(args.data_dir)
 
