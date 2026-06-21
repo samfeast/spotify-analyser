@@ -13,6 +13,7 @@ class DatabaseConnection:
 
     def __enter__(self):
         self.conn = sqlite3.connect(self.path)
+        self.conn.execute("BEGIN")
         logger.debug("Databse connection established")
         self.__initialise_database()
         logger.debug("Database initialised with schema")

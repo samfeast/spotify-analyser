@@ -10,9 +10,7 @@ from spotify_analyser.config import DATABASE_PATH
 from spotify_analyser.ingest.data_loader import DataLoader
 from spotify_analyser.logging_config import configure_logging
 from spotify_analyser.repository.database_connection import DatabaseConnection
-from spotify_analyser.repository.listening_event_repository import (
-    ListeningEventRepository,
-)
+from spotify_analyser.repository.data_repository import DataRepository
 
 logger = logging.getLogger(__name__)
 
@@ -30,7 +28,7 @@ def main():
     with DatabaseConnection(DATABASE_PATH) as conn:
         logger.debug("Instantiating loader and repository")
         loader = DataLoader(data_files)
-        repository = ListeningEventRepository(conn)
+        repository = DataRepository(conn)
 
         logger.info("Starting spotify analyser app")
         app = SpotifyAnalyserApp(loader, repository)

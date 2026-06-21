@@ -1,15 +1,13 @@
 import logging
 
 from spotify_analyser.ingest.data_loader import DataLoader
-from spotify_analyser.repository.listening_event_repository import (
-    ListeningEventRepository,
-)
+from spotify_analyser.repository.data_repository import DataRepository
 
 logger = logging.getLogger(__name__)
 
 
 class SpotifyAnalyserApp:
-    def __init__(self, loader: DataLoader, repository: ListeningEventRepository):
+    def __init__(self, loader: DataLoader, repository: DataRepository):
         self.loader = loader
         self.repository = repository
 
@@ -18,4 +16,4 @@ class SpotifyAnalyserApp:
             f"Ingesting {limit if limit >= 0 else "all"} listening events from data files"
         )
         event_iterator = self.loader.load_data()
-        self.repository.insert_listening_events(event_iterator, limit)
+        self.repository.insert_listening_history(event_iterator, limit)
